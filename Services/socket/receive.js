@@ -20,7 +20,6 @@ exports.handleReceiveSocket = async (socketIo) => {
                   Order_no: order['Order_no'] || '',
                   Design: order['Item_avatar'] || '',
                }
-               console.log({ value });
                socket.emit('insert', value);
             }
             if (data.operationType == 'delete') {

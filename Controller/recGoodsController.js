@@ -81,6 +81,7 @@ exports.All_entry = async (req, res) => {
         Receive_ch_no: data['Receive_ch_no'],
         Receive_qty: data['Receive_qty'],
         Client_name: client[data['Client_id']].Client_name,
+        Client_id: data.Client_id,
         Order_no: order[data.Order_id]['Order_no'] || 'Order_no',
         Order_id: data.Order_id,
         Design: order[data.Order_id]['Item_avatar'],

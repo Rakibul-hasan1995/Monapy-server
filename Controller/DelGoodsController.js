@@ -103,8 +103,6 @@ exports.Update = async (req, res) => {
   const filter = {
     _id: req.body._id
   }
-
-
   //--->> Check All Input value are valid---->>
   const Validator = validate(req.body)
   if (!Validator.isValid) {

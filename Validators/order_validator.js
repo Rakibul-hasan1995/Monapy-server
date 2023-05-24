@@ -3,6 +3,8 @@ const validate = Order => {
    let error = {}
    if (!Order.Order_no) {
       error.Order_no = "! Please Enter Order No !⚠️"
+   } else if (Order.Order_no.length < 3) {
+      error.Order_no = "! Please Enter Valid Order No !⚠️"
    }
    if (!Order.Order_date) {
       error.Order_date = "! Please Enter Order Date !⚠️"

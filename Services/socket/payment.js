@@ -1,4 +1,5 @@
 const Payment = require("../../Models/paymentModel");
+const Client = require("../../Models/ClientModel");
 
 exports.handlePaymentSocket = async (socketIo) => {
    try {
@@ -7,9 +8,15 @@ exports.handlePaymentSocket = async (socketIo) => {
          console.log('socket connected to "api/payment"');
          const changeStream = Payment.watch()
          socket.emit('connection', { message: `successfully connect to socketId: ${socket.id}` })
-         changeStream.on('change', data => {
+         changeStream.on('change', async (data) => {
             if (data.operationType == 'insert') {
-               socket.emit("insert", data.fullDocument);
+               const fullDocument = data.fullDocument
+               const client = await Client.findOne({ _id: fullDocument.Client_id })
+               const value = {
+                  ...fullDocument,
+                  Client_name: client.Client_name,
+               }
+               socket.emit("insert", value);
             }
             if (data.operationType == 'delete') {
                const _id = data.documentKey._id
