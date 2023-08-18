@@ -44,20 +44,12 @@ exports.Create = async (req, res) => {
   //--->> Check All Input value are valid <<----
 
   try {
-    const order = _arrToObjBy_id(await Order.find({}))
-    const client = _arrToObjBy_id(await Client.find({}))
-
     // Save this Client to database ------->>
 
     let data = await D_goods.create(req.body)
+      .populate('Client_id', 'Client_name')
+      .populate('Order_id', ['Order_no', 'Item_avatar'])
 
-    data = {
-      ...req.body,
-      _id: data._id,
-      Order_no: order[data.Order_id]['Order_no'],
-      Design: order[data.Order_id]['Item_avatar'],
-      Client_name: client[data['Client_id']].Client_name,
-    }
 
     res.send(data)
     // Save this Client to database <<-------
@@ -68,34 +60,32 @@ exports.Create = async (req, res) => {
   }
 };
 
-exports.All_entry = async (req, res) => {
-  try {
-    const dGoods = _arrToObjBy_id(await D_goods.find({}))
-    await getGetModifyDelivery(dGoods)
-    res.send(dGoods)
 
+exports.All_entry = async (req, res, next) => {
+  try {
+    const paymentData = await D_goods.find({})
+      .populate('Client_id', 'Client_name')
+      .populate('Order_id', ['Order_no', 'Item_avatar'])
+      .sort({ 'Delivery_date': -1, "Delivery_ch_no": -1 })
+      .limit(50)
+    res.status(200).json(paymentData)
   } catch (e) {
-    console.log(e);
-    res.sendStatus(500)
+    next(e)
   }
 };
 
-
-
-exports.GetDataByOrder = async (req, res) => {
-  const filter = {
-    Order_id: req.query.Order_id
-  }
+exports.delQuery = async (req, res, next) => {
   try {
-    const dGoods = _arrToObjBy_id(await D_goods.find(filter))
-    await getGetModifyDelivery(dGoods)
-    res.send(dGoods)
+    const recData = await D_goods.find(req.query)
+      .populate('Client_id', 'Client_name')
+      .populate('Order_id', ['Order_no', 'Item_avatar'])
+      .sort({ 'Delivery_date': -1, "Delivery_ch_no": -1 })
+
+    res.status(200).json(recData)
   } catch (e) {
-    console.log(e);
-    res.sendStatus(500)
+    next(e)
   }
 };
-
 
 
 
@@ -111,17 +101,10 @@ exports.Update = async (req, res) => {
   //--->> Check All Input value are valid <<----
 
   try {
-    const order = _arrToObjBy_id(await Order.find({}))
-    const client = _arrToObjBy_id(await Client.find({}))
+    let data = await D_goods.findOneAndUpdate(filter, req.body, { new: true })
+      .populate('Client_id', 'Client_name')
+      .populate('Order_id', ['Order_no', 'Item_avatar'])
 
-    let data = await D_goods.findOneAndUpdate(filter, req.body, { new: true });
-    data = {
-      ...req.body,
-      _id: data._id,
-      Order_no: order[data.Order_id]['Order_no'],
-      Design: order[data.Order_id]['Item_avatar'],
-      Client_name: client[data['Client_id']].Client_name,
-    }
     res.send(data)
   } catch (e) {
     console.log(e);
@@ -135,7 +118,6 @@ exports.Delete = async (req, res) => {
   try {
     const data = await D_goods.deleteOne({ _id: req.body._id })
     res.sendStatus(200)
-    console.log(data);
 
   } catch (e) {
     console.log(e);
@@ -143,27 +125,6 @@ exports.Delete = async (req, res) => {
   }
 };
 
-
-const getGetModifyDelivery = async (dGoods) => {
-  const order = _arrToObjBy_id(await Order.find({}))
-  const client = _arrToObjBy_id(await Client.find({}))
-  for (let i = 0; i < Object.values(dGoods).length; i++) {
-    const _id = Object.values(dGoods)[i]._id
-    const data = dGoods[_id]
-    dGoods[_id] = {
-      _id,
-      Delivery_date: data['Delivery_date'],
-      Delivery_ch_no: data['Delivery_ch_no'],
-      Delivery_qty: data['Delivery_qty'],
-      Client_name: client[data['Client_id']].Client_name,
-      Client_id: data['Client_id'],
-      Order_no: order[data.Order_id]['Order_no'],
-      Order_id: data.Order_id,
-      Design: order[data.Order_id]['Item_avatar'],
-    }
-  }
-  return dGoods
-}
 
 
 

@@ -9,9 +9,6 @@ const validate = Order => {
    if (!Order.Order_date) {
       error.Order_date = "! Please Enter Order Date !⚠️"
    }
-   if (!Order.Order_sl) {
-      error.Order_sl = "! Please Enter Order SL no !⚠️"
-   }
    if (!Order.Order_qty) {
       error.Order_qty = "Please Enter Order Qty !⚠️"
    }

@@ -1,3 +1,4 @@
+const { getQueryOrder } = require("../../Controller/orderController");
 const Order = require("../../Models/OrderModel");
 
 exports.handleOrderSocket = async (socketIo) => {
@@ -6,14 +7,11 @@ exports.handleOrderSocket = async (socketIo) => {
       nsp.on('connection', (socket) => {
          console.log('socket connected to "api/order"');
          const changeStream = Order.watch()
-         changeStream.on('change', data => {
+         changeStream.on('change', async (data) => {
             if (data.operationType == 'insert') {
                let order = data.fullDocument
-               order = {
-                  ...order,
-                  OrderAmount: order.Order_qty * order.Order_rate,
-               }
-               socket.emit("insert", order);
+               let resData = await getQueryOrder({ _id: order._id })
+               socket.emit("insert", resData);
             }
             if (data.operationType == 'delete') {
                const _id = data.documentKey._id
@@ -21,9 +19,11 @@ exports.handleOrderSocket = async (socketIo) => {
             }
             if (data.operationType == 'update') {
                const _id = data.documentKey._id
-               const newData = data.updateDescription?.updatedFields
-               const value = { _id, newData }
-               socket.emit("changes", value);
+               // const updateData = data.updateDescription?.updatedFields
+               // const value = { _id, updateData }
+               let resData = await getQueryOrder({ _id })
+
+               socket.emit("changes", resData);
             }
          })
          socket.on('disconnect', () => {
@@ -35,3 +35,5 @@ exports.handleOrderSocket = async (socketIo) => {
       console.error(error)
    }
 };
+
+

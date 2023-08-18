@@ -7,13 +7,13 @@ const validate = item => {
    if (!item.Invoice_no) {
       error.Invoice_no = "! Please Enter Item Number ⚠️"
    }
-   if (!item.Client_bill_no) {
-      error.Client_bill_no = "! Please Select An Order ⚠️"
-   }
+   // if (!item.Client_bill_no) {
+   //    error.Client_bill_no = "! Please Select An Order ⚠️"
+   // }
    if (!item.Client_id) {
       error.Client_id = "! Please Select Client ⚠️"
    }
-   if (!item.Items[0].length) {
+   if (!item.Items.length) {
       error.Items = "! Please Select Order ⚠️"
    }
    if (!item.Invoice_amount) {

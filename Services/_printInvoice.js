@@ -19,7 +19,7 @@ const toWords = new ToWords({
 });
 
 const getParentage = (item) => {
-   const amm = _arrSummation(item.item, 'OrderAmount')
+   const amm = _arrSummation(item.Items, 'OrderAmount')
    const dis = item.Discount
    const res = Number(amm) / 100 * Number(dis)
    return res.toFixed(2)
@@ -65,23 +65,22 @@ exports._printInvoice = async (item, res) => {
       },
 
    ]);
-   for (let i = 0; i < item.item.length; i++) {
+   for (let i = 0; i < item?.Items?.length; i++) {
       rows.push([
-
          {
-            text: `${item.item[i].Order_no}`,
+            text: `${item.Items[i].Order_no}`,
             style: 'tableCell',
             alignment: 'center',
             borderColor: ['#dee2e6', '#dee2e6', '#dee2e6', '#dee2e6'],
          },
          // {
-         //    text: `${item.item[i].Order_no}`,
+         //    text: `${item.Items[i].Order_no}`,
          //    style: 'tableCell',
          //    alignment: 'center',
          //    borderColor: ['#dee2e6', '#dee2e6', '#dee2e6', '#dee2e6'],
          // },
          {
-            image: await _Base64ImageFromURL(item.item[i].design),
+            image: await _Base64ImageFromURL(item.Items[i].Item_avatar),
             width: 40,
             height: 25,
             alignment: 'center',
@@ -89,19 +88,19 @@ exports._printInvoice = async (item, res) => {
 
          },
          {
-            text: `${item.item[i].Delivery_ch_no || 'null'}`,
+            text: `${item.Items[i].Delivery_ch_no || 'null'}`,
             style: 'tableCell',
             borderColor: ['#dee2e6', '#dee2e6', '#dee2e6', '#dee2e6'],
 
          },
 
          {
-            text: `${item.item[i].Order_qty} Pcs`,
+            text: `${item.Items[i].Order_qty} Pcs`,
             style: 'tableCell',
             borderColor: ['#dee2e6', '#dee2e6', '#dee2e6', '#dee2e6'],
          },
          {
-            text: `${numberFormate(Number(item.item[i].Order_rate).toFixed(2))}`,
+            text: `${numberFormate(Number(item.Items[i].Order_rate).toFixed(2))}`,
             style: 'tableCell',
             borderColor: ['#dee2e6', '#dee2e6', '#dee2e6', '#dee2e6'],
 
@@ -112,7 +111,7 @@ exports._printInvoice = async (item, res) => {
             borderColor: ['#dee2e6', '#dee2e6', '#dee2e6', '#dee2e6'],
          },
          {
-            text: `${numberFormate(Number(item.item[i].Order_rate * item.item[i].Order_qty).toFixed(2))}`,
+            text: `${numberFormate(Number(item.Items[i].Order_rate * item.Items[i].Order_qty).toFixed(2))}`,
             style: 'tableCell',
             borderColor: ['#dee2e6', '#dee2e6', '#dee2e6', '#dee2e6'],
          },
@@ -185,7 +184,7 @@ exports._printInvoice = async (item, res) => {
       },
       {
          fontSize: 9,
-         text: `${_arrSummation(item.item, 'Order_qty')} Pcs`,
+         text: `${_arrSummation(item.Items, 'Order_qty')} Pcs`,
          style: 'tableHeader',
          borderColor: ['#dee2e6', '#dee2e6', '#dee2e6', '#dee2e6'],
       },
@@ -210,11 +209,11 @@ exports._printInvoice = async (item, res) => {
 
    ]);
    let dd = {
-      header: {
-         image: await _Base64ImageFromURL("https://res.cloudinary.com/dbu76a0wo/image/upload/v1663769776/padTop_yluxqh.png"),
-         width: 595.28,
-         margin: [0, 20],
-      },
+      // header: {
+      //    image: await _Base64ImageFromURL("https://res.cloudinary.com/dbu76a0wo/image/upload/v1663769776/padTop_yluxqh.png"),
+      //    width: 595.28,
+      //    margin: [0, 20],
+      // },
       content: [
          {
             margin: [0, 110, 0, 0],

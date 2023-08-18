@@ -1,17 +1,16 @@
 
 const Client = require('../Models/ClientModel');
 const Invoice = require('../Models/InvoiceModel');
-const Item = require('../Models/ItemModel');
 const Order = require('../Models/OrderModel');
 const { _arrToObjBy_id, _arrSummation } = require('../Utils/jsFunctions');
-const Pdfmake = require('pdfmake');
+const moment = require('moment');
 
 const validate = require('../Validators/Invoice_Validator');
 const D_goods = require('../Models/Del_goods_model');
 const { _printInvoice } = require('../Services/_printInvoice');
+const { default: mongoose } = require('mongoose');
 
 exports.Create_Invoice = async (req, res, next) => {
-
   // Check This Invoice is already create ? ---->>
   const existItem = await Invoice.findOne({ Invoice_no: req.body.Invoice_no })
   if (existItem) {
@@ -25,339 +24,211 @@ exports.Create_Invoice = async (req, res, next) => {
     return res.status(400).json(Validator.error)
   }
   // Check All Input value are valid <<----
-
-
-
   try {
     // Save this item to database ------->>
+    const billNo = await Invoice.count({ Client_id: req.body.Client_id })
     const bodyData = {
       ...req.body,
+      Client_bill_no: billNo + 1,
       Invoice_amount: req.body.Invoice_amount.toFixed()
     }
+
     let data = await Invoice.create(bodyData)
 
     // Change Status of Orders ------->>
-    data.Items.forEach(async (el) => {
-      const or = await Order.findOneAndUpdate({ _id: el }, { Order_status: 'Invoiced' }, { new: true })
-      console.log(or);
-    })
-
+    await Order.updateMany(
+      { _id: { $in: data.Items } },
+      { $set: { Order_status: 'Invoiced' } }
+    );
 
     // generate response
-    const order = _arrToObjBy_id(await Order.find({}))
-    const client = _arrToObjBy_id(await Client.find({}))
+    const inv = await getQueryInvoice({ _id: data._id })
+
+    res.send(inv)
+
+  } catch (e) {
+    console.log(e);
+    next(e)
+  }
+};
 
 
-    data.Items.map((order_id) => {
-      let x = order[order_id]
-      return {
-        Order_no: x.Order_no,
-        Order_date: x.Order_date,
-        OrderAmount: x.Order_qty * x.Order_rate,
-        Order_qty: x.Order_qty,
-        Order_rate: x.Order_rate,
-        Order_sl: x.Order_sl,
-        design: x['Item_avatar'],
-      }
-    })
 
-    data = {
-      _id: data._id,
-      Invoice_date: data['Invoice_date'],
-      Invoice_no: data['Invoice_no'],
-      Client_bill_no: data['Client_bill_no'],
-      Client_name: client[data['Client_id']].Client_name,
-      Client_id: data['Client_id'],
-      Client_address: client[data['Client_id']].Client_address,
-      Invoice_amount: _arrSummation(data.Items, 'OrderAmount'),
-      // Invoice_amount: data['Invoice_amount'],
-      Discount: data['Discount'],
-      Status: data['Status'],
-      item: data.Items,
+exports.getCount = async (req, res, next) => {
+  try {
+    const count = await Invoice.count({})
+
+    res.status(200).json(count)
+  } catch (error) {
+    next(error)
+  }
+};
+
+exports.getQuery = async (req, res, next) => {
+  try {
+    if (!Object.keys(req.query).length) {
+      return res.status(400).json({ massage: 'Query Sting Not Valid' })
     }
-
+    const data = await getQueryInvoice(req.query)
     res.send(data)
-    // Save this item to database <<-------
-
-  } catch (e) {
-    console.log(e);
-    // res.sendStatus(500)
-    next(e)
+  } catch (error) {
+    next(error)
   }
 };
 
 
 
-exports.getQuery = async (req, res) => {
+
+exports.All_invoice = async (req, res, next) => {
   try {
-    const invoice = _arrToObjBy_id(await Invoice.find(req.query))
-    const order = _arrToObjBy_id(await Order.find({}))
-    const client = _arrToObjBy_id(await Client.find({}))
-    for (let i = 0; i < Object.values(invoice).length; i++) {
-      const _id = Object.values(invoice)[i]._id
-      const data = invoice[_id]
-      let Item = []
-      Object.values(data['Items']).forEach(element => {
-        let x = order[element]
-        x = {
-          Order_no: x.Order_no,
-          Order_date: x.Order_date,
-          OrderAmount: x.Order_qty * x.Order_rate,
-          Order_qty: x.Order_qty,
-          Order_rate: x.Order_rate,
-          Order_sl: x.Order_sl,
-          design: x['Item_avatar'],
-        }
-        Item.push(x)
-      });
-      invoice[_id] = {
-        _id,
-        Invoice_date: data['Invoice_date'],
-        Invoice_no: data['Invoice_no'],
-        Client_bill_no: data['Client_bill_no'],
-        Client_name: client[data['Client_id']].Client_name,
-        Client_id: data['Client_id'],
-        Client_address: client[data['Client_id']].Client_address,
-        Invoice_amount: getParentage(_arrSummation(Item, 'OrderAmount'), data['Discount']),
-        Discount: data['Discount'],
-        Status: data['Status'],
-        item: Item,
-        design: Item[0]['design']
-      }
-      // console.log(invoice);
-    }
-    res.send(invoice)
+    const thirtyDaysAgo = new Date(moment().subtract(30, 'days'))
+    const invoices = await Invoice.find({ Invoice_date: { $gte: thirtyDaysAgo } })
+      .populate('Items')
+      .populate({ path: 'Client_id', select: ['Client_name', 'Client_address'] })
+      .exec();
+
+    res.send(invoices)
   } catch (e) {
     console.log(e);
-    res.sendStatus(500)
+    next()
   }
 };
 
-
-
-exports.groupByDay = async (req, res, next) => {
+exports.groupXy = async (_req, res, next) => {
   try {
-    const invoice = _arrToObjBy_id(await Invoice.find())
-    const order = _arrToObjBy_id(await Order.find({}))
-
-    for (let i = 0; i < Object.values(invoice).length; i++) {
-      const _id = Object.values(invoice)[i]._id
-      const data = invoice[_id]
-      let Item = []
-      Object.values(data['Items']).forEach(element => {
-        let x = order[element]
-        x = {
-          OrderAmount: x.Order_qty * x.Order_rate,
-        }
-        Item.push(x)
-      });
-      invoice[_id] = {
-        x: data['Invoice_date'],
-        y: getParentage(_arrSummation(Item, 'OrderAmount'), data['Discount'])
-        // y: Number(getParentage(_arrSummation(Item, 'OrderAmount'), data['Discount'])).toFixed(2)
-      }
-    }
-    res.send(Object.values(invoice))
+    let data = await getInvoiceXY()
+    res.status(200).json(data)
   } catch (e) {
     next(e)
   }
 };
-exports.groupXy = async (req, res, next) => {
-  try {
-    const invoice = _arrToObjBy_id(await Invoice.find())
-    const order = _arrToObjBy_id(await Order.find({}))
-
-    for (let i = 0; i < Object.values(invoice).length; i++) {
-      const _id = Object.values(invoice)[i]._id
-      const data = invoice[_id]
-      let Item = []
-      Object.values(data['Items']).forEach(element => {
-        let x = order[element]
-        x = {
-          OrderAmount: x.Order_qty * x.Order_rate,
-        }
-        Item.push(x)
-      });
-      invoice[_id] = {
-        x: data['Invoice_date'],
-        y: getParentage(_arrSummation(Item, 'OrderAmount'), data['Discount']),
-        Client_id: data.Client_id
-        // y: Number(getParentage(_arrSummation(Item, 'OrderAmount'), data['Discount'])).toFixed(2)
-      }
-    }
-    res.send(Object.values(invoice))
-  } catch (e) {
-    next(e)
-  }
-};
-
-
-
-const getParentage = (amm, discount) => {
-  let y = (amm / 100) * discount
-  let res = parseInt(amm) - parseInt(y)
-  return res
-}
-
-
-
-exports.All_invoice = async (req, res) => {
-  try {
-    const invoice = _arrToObjBy_id(await Invoice.find({}))
-    const order = _arrToObjBy_id(await Order.find({}))
-    const client = _arrToObjBy_id(await Client.find({}))
-
-    for (let i = 0; i < Object.values(invoice).length; i++) {
-      const _id = Object.values(invoice)[i]._id
-      const data = invoice[_id]
-      let Item = []
-      Object.values(data['Items']).forEach(element => {
-        let x = order[element]
-        x = {
-          Order_id: element,
-          Order_no: x.Order_no,
-          Order_date: x.Order_date,
-          OrderAmount: x.Order_qty * x.Order_rate,
-          Order_qty: x.Order_qty,
-          Order_rate: x.Order_rate,
-          Order_sl: x.Order_sl,
-          design: x['Item_avatar'],
-        }
-        Item.push(x)
-      });
-      invoice[_id] = {
-        _id,
-        Invoice_date: data['Invoice_date'],
-        Invoice_no: data['Invoice_no'],
-        Client_bill_no: data['Client_bill_no'],
-        Client_name: client[data['Client_id']].Client_name,
-        Client_id: data['Client_id'],
-        Client_address: client[data['Client_id']].Client_address,
-        Invoice_amount: getParentage(_arrSummation(Item, 'OrderAmount'), data['Discount']),
-        Discount: data['Discount'],
-        Status: data['Status'],
-        item: Item,
-        design: Item[0]['design']
-      }
-    }
-    res.send(invoice)
-  } catch (e) {
-    console.log(e);
-    res.sendStatus(500)
-  }
-};
-
-
-exports.Update_invoice = async (req, res) => {
-  const filter = {
-    _id: req.body._id
-  }
-  const update = {
-    // Item_name: req.body.Item_name,
-    // Item_type: req.body.Item_type,
-    // Item_avatar: req.body.Item_avatar,
-    // Item_description: req.body.Item_description,
-    // Item_unit: req.body.Item_unit,
-    // Item_stitch: req.body.Item_stitch,
-  }
-  try {
-    let data = await Invoice.findOneAndUpdate(filter, update, { new: true });
-    res.send(data)
-  } catch (e) {
-    console.log(e);
-    res.sendStatus(500)
-  }
-};
-
-
-exports.Delete_invoice = async (req, res) => {
-  try {
-    const data = await Invoice.deleteOne({ _id: req.body._id })
-    res.sendStatus(200)
-    console.log(data);
-
-  } catch (e) {
-    console.log(e);
-    res.sendStatus(500)
-  }
-};
-
-
-
 
 
 exports.generatePdf = async (req, res, next) => {
-
+  console.log(req.query)
   try {
-    let invoice = await Invoice.findOne(req.query)
-    const inv = invoice
-    const order = _arrToObjBy_id(await Order.find({}))
-    const client = await Client.findOne({ _id: inv.Client_id })
-    let arr = inv['Items']
-    let Item = arr.map((or_id) => {
-      let x = order[or_id]
-      return {
-        Order_id: or_id,
-        Order_no: x.Order_no,
-        Order_date: x.Order_date,
-        OrderAmount: x.Order_qty * x.Order_rate,
-        Order_qty: x.Order_qty,
-        Order_rate: x.Order_rate,
-        Order_sl: x.Order_sl,
-        design: x['Item_avatar'],
-      };
-    });
+    let invoice = await getQueryInvoice(req.query)
 
-    for (let i = 0; i < Item.length; i++) {
-      const element = Item[i];
+    for (let i = 0; i < invoice.Items.length; i++) {
+      const element = invoice.Items[i];
       let cNo = [];
-      const o = await D_goods.find({ Order_id: element.Order_id })
+      const o = await D_goods.find({ Order_id: element._id })
       o.forEach((e) => cNo.push(e.Delivery_ch_no))
       const withSpaces = cNo.join(", ");
       element.Delivery_ch_no = withSpaces;
     }
-    const newInvoice = {
-      _id: inv['_id'],
-      Invoice_date: inv['Invoice_date'],
-      Invoice_no: inv['Invoice_no'],
-      Client_bill_no: inv['Client_bill_no'],
-      Client_name: client.Client_name,
-      Client_id: inv['Client_id'],
-      Client_address: client.Client_address,
-      Invoice_amount: getParentage(_arrSummation(Item, 'OrderAmount'), inv['Discount']),
-      Discount: inv['Discount'],
-      Status: inv['Status'],
-      item: Item,
-      design: Item[0]['design']
-    }
-    _printInvoice(newInvoice, res)
+    let Items = invoice.Items.map((or) => {
+      return {
+        OrderAmount: or.Order_qty * or.Order_rate,
+        ...or
+      };
+    });
+
+    invoice.Items = Items
+    _printInvoice(invoice, res)
   } catch (error) {
-    console.log(' error in  invoice controller', error)
-    res.json('error')
-    // next(error)
+    console.log(error)
+    next(error)
   }
 };
 
 
 
-const xyz = async () => {
-  Invoice.find(function (err, user) {
+const getQueryInvoice = exports.getQueryOrder = async (query) => {
 
-    user.forEach(async function (st) {
-      console.log(st.Invoice_date);
-      // let num = st.Invoice_amount.toFixed();
+  const queryParams = query
+  if (!query) {
 
-      // try {
-      //   await Invoice.updateOne({ _id: st._id }, { Invoice_amount: num })
-      //   console.log(num)
-      // } catch (error) {
-      //   console.log(error)
-      // }
+    return []
+  }
+  let matchStage = {};
+  if (queryParams.Client_id) {
+    matchStage.Client_id = mongoose.Types.ObjectId(queryParams.Client_id);
+  }
+  if (queryParams.Order_no) {
+    matchStage.Order_no = queryParams.Order_no
+  }
+  if (queryParams.Order_status) {
+    matchStage.Order_status = queryParams.Order_status
+  }
+  if (queryParams._id) {
+    matchStage._id = mongoose.Types.ObjectId(queryParams._id);
+  }
+  if (!Object.keys(query).length) {
+    return []
+  }
+  try {
+    const data = await Invoice.aggregate([
+      {
+        $match: matchStage
+      },
+      {
+        $lookup: {
+          from: 'clients', // The name of the "Client" collection in the database
+          localField: 'Client_id',
+          foreignField: '_id',
+          as: 'clientInfo',
+        },
+      },
+      {
+        $lookup: {
+          from: 'orders', // The name of the "Order" collection in the database
+          localField: 'Items',
+          foreignField: '_id',
+          as: 'Items',
+        },
+      },
+      {
+        $addFields: {
+          Client_name: { $first: '$clientInfo.Client_name' },
+          Client_address: { $first: '$clientInfo.Client_address' },
+          image: { $first: "$Items.Item_avatar" }
+        },
+      },
+      { $unset: ["clientInfo", 'updatedAt', '__v'] },
 
+    ])
+    if (queryParams._id) {
+      if (data.length == 1) {
+        return data[0]
+      }
+    }
+    return data
+  } catch (e) {
+    return e
+  }
+}
 
-    })
-  })
+const getInvoiceXY = exports.getInvoiceXY = async () => {
+  try {
+    let data = await Invoice.aggregate(
+      [
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$Invoice_date' } },
+            y: { $sum: '$Invoice_amount' }
+          }
+        },
+        { $sort: { _id: 1 } },
+      ],
+    );
+    data = data.map(item => {
+      return {
+        x: item._id,
+        y: item.y
+      };
+    });
+    return data
+  } catch (error) {
+    throw new Error(error)
+  }
 }
 
 
-// xyz()
+
+
+
+
+
+
+

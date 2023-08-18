@@ -1,14 +1,12 @@
 
+const { isValidObjectId } = require('mongoose');
 const Order = require('../Models/OrderModel');
 const Production = require('../Models/ProductionModel');
 const { _arrToObjBy_id } = require('../Utils/jsFunctions');
 const validate = require('../Validators/productionValidator');
 
 
-
-
-
-exports.Create = async (req, res) => {
+exports.Create = async (req, res, next) => {
    const prod = req.body
    //--->> Check All Input value are valid---->>
    const Validator = validate(prod)
@@ -24,40 +22,48 @@ exports.Create = async (req, res) => {
          await Order.findOneAndUpdate({ _id: el.Order_id }, { $inc: { ProductionQty: el.qty } })
       });
 
-      res.send(data)
-
+      res.status(200).json(data)
       // Save this Data to database <<-------
    } catch (e) {
-      console.log(e);
-      res.sendStatus(500)
+      next(e)
    }
 };
-const _passDate = (x) => {
-   var d = new Date();
-   d.setDate(d.getDate() - x);
-   return d
-}
-exports.All_entry = async (req, res) => {
-   const start = new Date(req.body?.start || _passDate(10))
-   const end = new Date(req.body?.end || new Date())
-   var d = new Date();
-   d.setDate(d.getDate() - 15);
+
+exports.All_entry = async (req, res, next) => {
    try {
-      const data = _arrToObjBy_id(await Production.find({
-         createdAt: {
-            $gte: start,
-            $lte: end
-         }
-      }).sort({ Production_date: 1 }))
-      res.send(data)
+      const data = await Production.find()
+         .sort({ Production_date: -1 })
+         .limit(65)
+      res.status(200).json(data)
    } catch (e) {
-      console.log(e);
-      res.sendStatus(500)
+      next(e)
+   }
+};
+exports.getProductionByOrder_id = async (req, res, next) => {
+   try {
+      const { Order_id } = req.params;
+      if (!isValidObjectId(Order_id)) {
+         return res.status(401).json({ "message": 'data not found' })
+      }
+      const data = await Production.find({ 'Production_data.Order_id': Order_id, })
+         .sort({ Production_date: -1 })
+      res.status(200).json(data)
+   } catch (e) {
+      next(e)
+   }
+};
+exports.getProductionQuery = async (req, res, next) => {
+   try {
+      const data = await Production.find(req.query)
+         .sort({ Production_date: -1 })
+      res.status(200).json(data)
+   } catch (e) {
+      next(e)
    }
 };
 
 
-exports.Update = async (req, res) => {
+exports.Update = async (req, res, next) => {
    const filter = {
       _id: req.body._id
    }
@@ -70,7 +76,7 @@ exports.Update = async (req, res) => {
 
    try {
       let data = await Production.findOneAndUpdate(filter, req.body, { new: true });
-      res.send(data)
+      res.status(200).json(data)
    } catch (e) {
       console.log(e);
       res.sendStatus(500)
@@ -79,27 +85,35 @@ exports.Update = async (req, res) => {
 
 
 
-exports.Delete = async (req, res) => {
+exports.Delete = async (req, res, next) => {
    try {
       const data = await Production.deleteOne({ _id: req.query._id })
       if (data.deletedCount > 0) {
          res.sendStatus(200)
       } else {
-         res.send(500)
+         res.status(500).json({ "message": 'Data not found' })
       }
-
    } catch (e) {
-      console.log(e);
-      res.sendStatus(500)
+      next(e)
    }
 };
 
 
-exports.groupByDay = async (req, res) => {
+exports.groupByDay = async (_req, res, next) => {
+   try {
+      let data = await getProductionXY()
+      res.status(200).json(data)
+   } catch (error) {
+      next(error)
+   }
+};
+
+
+
+const getProductionXY = exports.getProductionXY = async () => {
    try {
       let data = await Production.aggregate(
          [
-            // { $match: { Date: { $gt: month + "-0", $lt: month + "-32" } } },
             {
                $group: {
                   _id: "$Production_date",
@@ -108,7 +122,6 @@ exports.groupByDay = async (req, res) => {
             },
             { $sort: { _id: 1 } },
          ],
-
       );
       data = data.map(item => {
          return {
@@ -116,9 +129,9 @@ exports.groupByDay = async (req, res) => {
             y: item.y
          };
       });
-      res.send(data)
+      return data
    } catch (error) {
-      console.log(error)
+      throw new Error(error)
    }
 };
 

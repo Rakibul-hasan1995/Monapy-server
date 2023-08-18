@@ -17,7 +17,7 @@ const routes = [
         handler: ItemRoute
     },
     {
-        path: '/api/client/',
+        path: '/api/clients/',
         handler: ClientRoute
     },
     {
@@ -25,7 +25,7 @@ const routes = [
         handler: UserRoute
     },
     {
-        path: '/api/order/',
+        path: '/api/orders/',
         handler: OrderRoute
     },
     {
@@ -45,7 +45,7 @@ const routes = [
         handler: InvoiceRoutes
     },
     {
-        path: '/api/payment/',
+        path: '/api/payments/',
         handler: PaymentRoutes
     },
 ]

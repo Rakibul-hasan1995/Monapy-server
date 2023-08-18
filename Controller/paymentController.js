@@ -19,7 +19,6 @@ exports.Create = async (req, res, next) => {
     const payment = await Payment.create(req.body)
     const client = await Client.findOne({ _id: req.body.Client_id })
     let data = {
-
       _id: payment['_id'],
       Payment_date: payment['Payment_date'],
       Client_id: payment['Client_id'],
@@ -28,7 +27,6 @@ exports.Create = async (req, res, next) => {
       Payment_description: payment['Payment_description'],
       Payment_mode: payment['Payment_mode'],
       Receive_amount: payment['Receive_amount']
-
     }
     console.log(data);
     res.send(data)
@@ -41,15 +39,36 @@ exports.Create = async (req, res, next) => {
 
 
 exports.All_entry = async (req, res) => {
-
   try {
-    const data = _arrToObjBy_id(await Payment.find({}))
-    await getModifiedData(data)
-    res.send(data)
+    const paymentData = await Payment.find({})
+      .populate('Client_id', 'Client_name')
+      .select('_id Payment_date Client_id Client_name Receipt_no Payment_description Payment_mode Receive_amount');
 
+    // const data = _arrToObjBy_id(await Payment.find({}))
+    // await getModifiedData(data)
+    res.send(paymentData)
   } catch (e) {
     console.log(e);
     res.sendStatus(500)
+  }
+};
+
+
+
+
+exports.getQuery = async (req, res, next) => {
+  try {
+    if (!Object.keys(req.query).length) {
+      return res.status(400).json({ massage: 'Query Sting Not Valid' })
+    }
+    const paymentData = await Payment.find(req.query)
+      .populate('Client_id', 'Client_name')
+      .select('_id Payment_date Client_id Client_name Receipt_no Payment_description Payment_mode Receive_amount');
+
+    res.status(200).json(paymentData)
+
+  } catch (error) {
+    next(error)
   }
 };
 
@@ -88,39 +107,35 @@ exports.Delete = async (req, res) => {
 
 exports.groupXy = async (req, res, next) => {
   try {
-    const pay = await Payment.find()
-    let x = pay.map((data) => {
-      return {
-
-        x: data.Payment_date,
-        y: data.Receive_amount,
-        Client_id: data.Client_id
-      }
-    })
-    res.send(x)
+    const pay = await getPaymentXY()
+    res.status(200).json(pay)
   } catch (e) {
     next(e)
   }
 };
 
-const getModifiedData = async (payment) => {
-  const client = _arrToObjBy_id(await Client.find({}))
-  for (let i = 0; i < Object.values(payment).length; i++) {
-    const _id = Object.values(payment)[i]._id
-    const data = payment[_id]
-    payment[_id] = {
-      _id,
-      Payment_date: data['Payment_date'],
-      Client_id: data['Client_id'],
-      Client_name: client[data['Client_id']].Client_name,
-      Receipt_no: data['Receipt_no'],
-      Payment_description: data['Payment_description'],
-      Payment_mode: data['Payment_mode'],
-      Receive_amount: data['Receive_amount']
-    }
+const getPaymentXY = exports.getPaymentXY = async () => {
+  try {
+    let data = await Payment.aggregate(
+      [
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$Payment_date' } },
+            y: { $sum: '$Receive_amount' }
+          }
+        },
+        { $sort: { _id: 1 } },
+      ],
+    );
+    data = data.map(item => {
+      return {
+        x: item._id,
+        y: item.y
+      };
+    });
+    return data
+  } catch (error) {
+    throw new Error(error)
   }
-  return payment
 }
-
-
 
