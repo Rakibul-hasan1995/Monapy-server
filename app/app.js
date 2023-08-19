@@ -11,17 +11,19 @@ app.use(require('./middleware'))
 apiRoutes(app)
 app.use(require('./routes'))
 
-// // // View Frontend 
-// // if (process.env.NODE_ENV === 'production') {
-// app.use(express.static(path.join(__dirname, 'build')));
-// app.get('*', (req, res) => {
-//    res.sendFile(path.join(__dirname, 'build', 'index.html'));
-// });
-// // }
-// // View Frontend 
+app.use(errorHandler)
+
+
+
+
+app.use(express.static(path.join(__dirname, 'dist')));
+app.get('*', (_req, res) => {
+   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
+
 
 app.use(notFoundHandler)
-app.use(errorHandler)
+
 
 // app.use(cors({
 //    origin: 'http://localhost:5173',
