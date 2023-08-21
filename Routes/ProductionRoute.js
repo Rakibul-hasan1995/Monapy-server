@@ -5,7 +5,7 @@ const admin_Checker = require("../Middleware/admin_Checker");
 const { All_entry, Create, Delete, Update, groupByDay, getProductionByOrder_id, getProductionQuery } = require("../Controller/ProductionController");
 
 router.post("/", admin_Checker, Create);
-router.delete("/", Delete);
+router.delete("/",admin_Checker, Delete);
 router.put("/", admin_Checker, Update);
 router.get("/by-order/:Order_id", admin_Checker, getProductionByOrder_id);
 router.get("/group-by-day", admin_Checker, groupByDay);

@@ -17,19 +17,12 @@ exports.Create = async (req, res, next) => {
   try {
     // Save this Client to database ------->>
     const payment = await Payment.create(req.body)
-    const client = await Client.findOne({ _id: req.body.Client_id })
-    let data = {
-      _id: payment['_id'],
-      Payment_date: payment['Payment_date'],
-      Client_id: payment['Client_id'],
-      Client_name: client['Client_name'],
-      Receipt_no: payment['Receipt_no'],
-      Payment_description: payment['Payment_description'],
-      Payment_mode: payment['Payment_mode'],
-      Receive_amount: payment['Receive_amount']
-    }
-    console.log(data);
-    res.send(data)
+
+    const paymentData = await Payment.findById(payment._id)
+      .populate('Client_id', 'Client_name')
+      .select('_id Payment_date Client_id Client_name Receipt_no Payment_description Payment_mode Receive_amount');
+
+    res.send(paymentData)
     // Save this Client to database <<-------
 
   } catch (e) {

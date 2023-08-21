@@ -117,41 +117,36 @@ exports.User_login = async (req, res) => {
   const pass = req.body.User_password
   const User_email = req.body.User_email
   const user = await User.findOne({ User_email })
+  console.log({ user })
 
-  if (user) {
-    const isValid = await bcrypt.compare(pass, user.User_password)
-    if (isValid) {
-      const user_data = {
-        User_name: user.User_name,
-        User_id: user._id,
-        User_role: user.User_role,
-        User_company_id: user.User_company_id
-      }
-
-
-      // Generate Token  >>------>
-      const access_token = jwt.sign({
-        User_name: user.User_name,
-        User_id: user._id,
-        User_role: user.User_role,
-        User_company_id: user.User_company_id
-      }, process.env.JWT_SECRET, {
-        expiresIn: '30d'
-      });
-      return res
-        .cookie("access_token", access_token, {
-          // httpOnly: true,
-          // secure: process.env.NODE_ENV === "production",
-        })
-        .status(200)
-        .send({ user_data, access_token })
-
-    } else {
-      res.status(403).json('Authentication Failed1')
-    }
-  } else {
-    res.status(403).json('Authentication Failed')
+  if (!user) {
+    return res.status(403).json('Authentication Failed1')
   }
+
+  const isValid = await bcrypt.compare(pass, user.User_password)
+  if (!isValid) {
+    return res.status(403).json('Authentication Failed1')
+  }
+
+
+  const user_data = {
+    User_name: user.User_name,
+    User_id: user._id,
+    User_role: user.User_role,
+  }
+
+  const access_token = jwt.sign({
+    User_name: user.User_name,
+    User_id: user._id,
+    User_role: user.User_role,
+  }, process.env.JWT_SECRET, {
+    expiresIn: '30d'
+  });
+
+  return res
+    .status(200)
+    .send({ user_data, access_token })
+
 }
 
 
@@ -160,7 +155,11 @@ exports.User_logout = async (req, res) => {
   res.end()
 }
 exports.User_Check_log = async (req, res) => {
-  res.status(200)
-    .json(req.token);
+  const { User_role,
+    User_name,
+    User_id } = req
 
+  const data = { User_role, User_name, User_id }
+  res.status(200).json(data)
 }
+

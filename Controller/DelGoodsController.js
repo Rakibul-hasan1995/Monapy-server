@@ -46,12 +46,13 @@ exports.Create = async (req, res) => {
   try {
     // Save this Client to database ------->>
 
-    let data = await D_goods.create(req.body)
+    let data = await D_goods.create(req.body);
+
+    const resData = await D_goods.findById(data._id)
       .populate('Client_id', 'Client_name')
       .populate('Order_id', ['Order_no', 'Item_avatar'])
 
-
-    res.send(data)
+    res.send(resData)
     // Save this Client to database <<-------
 
   } catch (e) {

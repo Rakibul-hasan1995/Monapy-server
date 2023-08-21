@@ -26,12 +26,13 @@ exports.Create_R_goods = async (req, res) => {
 
     // Save this Client to database ------->>
 
-    let data = await R_goods.create(req.body)
+    const data = await R_goods.create(req.body);
+
+    const resData = await R_goods.findById(data._id)
       .populate('Client_id', 'Client_name')
       .populate('Order_id', ['Order_no', 'Item_avatar'])
 
-
-    res.send(data)
+    res.send(resData)
     // Save this Client to database <<-------
 
   } catch (e) {

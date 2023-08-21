@@ -9,17 +9,17 @@ const {
 
 } = require("../Controller/userController");
 
-router.get("/",  admin_Checker, All_user);
+router.get("/", admin_Checker, All_user);
 
 router.post("/create", Create_User);
 
 router.delete("/", admin_Checker, Delete_User);
 
-router.put("/", check_logger, Update_User);
+router.put("/", admin_Checker, Update_User);
 
 router.post("/login", User_login);
 
 router.post("/logout", check_logger, User_logout);
-router.get("/check/token", check_logger, User_Check_log);
+router.get("/verify-token", check_logger, User_Check_log);
 
 module.exports = router;

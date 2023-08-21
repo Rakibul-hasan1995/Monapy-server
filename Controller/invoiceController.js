@@ -81,7 +81,7 @@ exports.getQuery = async (req, res, next) => {
 
 exports.All_invoice = async (req, res, next) => {
   try {
-    const thirtyDaysAgo = new Date(moment().subtract(30, 'days'))
+    const thirtyDaysAgo = new Date(moment().subtract(180, 'days'))
     const invoices = await Invoice.find({ Invoice_date: { $gte: thirtyDaysAgo } })
       .populate('Items')
       .populate({ path: 'Client_id', select: ['Client_name', 'Client_address'] })

@@ -7,7 +7,7 @@ const {
 } = require("../Controller/recGoodsController");
 
 
-router.post("/", Create_R_goods);
+router.post("/",admin_Checker, Create_R_goods);
 router.delete("/", admin_Checker, DeleteR_goods);
 router.put("/", admin_Checker, Update_R_Goods);
 router.get("/query", admin_Checker, recQuery);

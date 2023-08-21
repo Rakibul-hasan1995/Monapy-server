@@ -13,15 +13,11 @@ exports.handleDeliverySocket = async (socketIo) => {
          changeStream.on('change', async (data) => {
             if (data.operationType == 'insert') {
                let fullDocument = data.fullDocument
-               const client = await Client.findOne({ _id: fullDocument.Client_id })
-               const order = await Order.findOne({ _id: fullDocument.Order_id })
-               fullDocument = {
-                  ...fullDocument,
-                  Client_name: client.Client_name,
-                  Order_no: order['Order_no'],
-                  Design: order['Item_avatar'],
-               }
-               socket.emit("insert", fullDocument);
+               const resData = await D_goods.findById(fullDocument._id)
+               .populate('Client_id', 'Client_name')
+               .populate('Order_id', ['Order_no', 'Item_avatar'])
+         
+               socket.emit("insert", resData);
             }
             if (data.operationType == 'delete') {
                const _id = data.documentKey._id
