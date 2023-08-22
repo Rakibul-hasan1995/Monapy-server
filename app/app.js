@@ -4,11 +4,18 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config('../.env')
 const { notFoundHandler, errorHandler } = require('./error')
+
+
+
 const apiRoutes = require('../Routes/MainRoutes')
 require('../db/dbConnection')
 const app = express()
+
 app.use(require('./middleware'))
 apiRoutes(app)
+app.get('/', (req, res) => {
+   res.send('Hey this is my API running 🥳')
+})
 app.use(require('./routes'))
 
 app.use(errorHandler)
@@ -24,7 +31,7 @@ if (process.env.NODE_ENV === 'PRODUCTION') {
    app.get('*', (_req, res) => {
       res.sendFile(path.join(__dirname, 'build', 'index.html'));
    });
- } 
+}
 
 app.use(notFoundHandler)
 
