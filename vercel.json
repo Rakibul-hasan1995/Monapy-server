@@ -1,7 +1,8 @@
 {
    "functions": {
      "api/index.js": {
-       "runtime": "nodejs14.x"
+       "runtime": "nodejs14.x",
+       "memory": 512 
      }
    }
  }
