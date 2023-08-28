@@ -16,6 +16,11 @@ apiRoutes(app)
 app.get('/', (req, res) => {
    res.send('Hey this is my API running 🥳')
 })
+app.get('/health', (req, res) => {
+   res
+   .status(200)
+   .end()
+})
 app.use(require('./routes'))
 
 app.use(errorHandler)
