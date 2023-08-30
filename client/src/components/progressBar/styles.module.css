@@ -1,0 +1,29 @@
+
+.progressbar_liquid {
+  animation: g 5500ms infinite ease-in-out,
+    r 5500ms infinite cubic-bezier(0.5, 0.5, 0.5, 0.5);
+  right: -5px;
+  top: -10px;
+  border-radius: 40%;
+}
+
+@keyframes g {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0.99;
+  }
+}
+
+@keyframes r {
+  from {
+    transform: rotate(0deg);
+  }
+  from {
+    transform: rotate(360deg);
+  }
+}

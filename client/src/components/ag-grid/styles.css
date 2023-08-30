@@ -1,0 +1,73 @@
+.ag-row .ag-cell {
+   display: flex;
+   /* justify-content: center; align horizontal */
+   align-items: center;
+ }
+.ag-theme-alpine {
+  --ag-foreground-color: #000000;
+  --ag-background-color: #f2eae5;
+  --ag-header-foreground-color: #000000;
+  --ag-header-background-color: #f2eae5;
+  --ag-odd-row-background-color: #e7e0da; 
+  --ag-header-column-resize-handle-color: rgb(126, 46, 132);
+
+  /* disable all borders */
+  /* --ag-borders: none; */
+
+  /* then add back a border between rows */
+  --ag-row-border-style: solid;
+  --ag-row-border-width: 0.5px;
+  --ag-row-border-color: rgb(206, 195, 195);
+
+  --ag-card-shadow: 0 3px 4px rgba(0, 0, 0, 0.082);
+  --ag-popup-shadow: 0 3px 4px rgba(0, 0, 0, 0.295);
+}
+.ag-theme-alpine-dark {
+  --ag-foreground-color: #eee;
+  --ag-background-color: ##333;
+  --ag-header-foreground-color: #eee;
+  --ag-header-background-color: #333;
+  --ag-odd-row-background-color: #3f3f3f;
+  --ag-header-column-resize-handle-color: rgb(126, 46, 132);
+
+  /* disable all borders */
+  /* --ag-borders: none; */
+  /* then add back a border between rows */
+  --ag-row-border-style: solid;
+  --ag-row-border-width: 0.5px;
+  --ag-row-border-color: rgb(105, 105, 105);
+}
+.ag-root-wrapper {
+   border-radius: 12px;
+}
+.ag-header-cell-label {
+   justify-content: center;
+ }
+
+.status-Complete {
+   background-color: rgba(0, 128, 0, 0.678) !important;
+}
+
+.status-Placed {
+   background-color: rgba(255, 240, 23, 0.877) !important;
+}
+
+.status-Processing {
+   background-color: #0d6cd179 !important;
+}
+
+.status-Hold {
+   background-color: rgba(255, 166, 0, 0.829) !important;
+}
+
+.status-Invoiced {
+   background-color: #00b336 !important;
+   color: #000000;
+}
+
+.status-Reject {
+   background-color: rgba(231, 0, 0, 0.829) !important;
+}
+.status-Sub-Contact {
+   background-color: rgba(170, 60, 60, 0.829) !important;
+}
