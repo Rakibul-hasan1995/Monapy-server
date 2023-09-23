@@ -209,11 +209,11 @@ exports._printInvoice = async (item, res) => {
 
    ]);
    let dd = {
-      // header: {
-      //    image: await _Base64ImageFromURL("https://res.cloudinary.com/dbu76a0wo/image/upload/v1663769776/padTop_yluxqh.png"),
-      //    width: 595.28,
-      //    margin: [0, 20],
-      // },
+      header: {
+          image: await _Base64ImageFromURL("https://res.cloudinary.com/dbu76a0wo/image/upload/v1663769776/padTop_yluxqh.png"),
+          width: 595.28,
+          margin: [0, 20],
+       },
       content: [
          {
             margin: [0, 110, 0, 0],
